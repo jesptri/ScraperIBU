@@ -1,9 +1,6 @@
 import requests
 from consts import *
 
-def get_key_from_value(dictionary, target_value):
-    return next((key for key, value in dictionary.items() if value == target_value), None)
-
 def get_places(RT, season, level): 
     season_start, season_end = season.split("-")
     season_id = season_start[-2:] + season_end[-2:]

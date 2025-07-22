@@ -35,7 +35,6 @@ class BiathlonScraper:
         places = get_places(RT, self.race_season, self.race_competition)
         code_place = places[self.race_location]
         all_races_code1 = get_races(RT, code_place)
-        race_id = get_key_from_value(all_races_code1, self.race_type)
         
         bib_name_nat, _, _ = get_bib_name_nat_list(RT, race_id)
 
