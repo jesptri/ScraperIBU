@@ -100,22 +100,22 @@ def convert_chrono_to_seconds(chrono):
     if ':' in chrono:
         parts = chrono.split(':')
         if len(parts) == 2:
-            minutes, secondes_fraction = parts
+            minutes, seconds_fraction = parts
             minutes = int(minutes) if minutes != '' else 0
         elif len(parts) == 3:
-            heures, minutes, secondes_fraction = parts
+            heures, minutes, seconds_fraction = parts
             heures = int(heures) if heures != '' else 0
             minutes = int(minutes) if minutes != '' else 0
         else:
             raise ValueError("Invalid chrono format")
         
-        if '.' in secondes_fraction:
-            secondes, fraction = secondes_fraction.split('.')
-            secondes = int(secondes) if secondes != '' else 0
+        if '.' in seconds_fraction:
+            seconds, fraction = seconds_fraction.split('.')
+            seconds = int(seconds) if seconds != '' else 0
             fraction = int(fraction.ljust(2, '0'))  # Ensure fraction is at least two digits
-            return (heures * 3600 + minutes * 60 + secondes + fraction / 100) if len(parts) == 3 else (minutes * 60 + secondes + fraction / 100)
+            return (heures * 3600 + minutes * 60 + seconds + fraction / 100) if len(parts) == 3 else (minutes * 60 + seconds + fraction / 100)
         else:
-            secondes = int(secondes_fraction) if secondes_fraction != '' else 0
-            return (heures * 3600 + minutes * 60 + secondes) if len(parts) == 3 else (minutes * 60 + secondes)
+            seconds = int(seconds_fraction) if seconds_fraction != '' else 0
+            return (heures * 3600 + minutes * 60 + seconds) if len(parts) == 3 else (minutes * 60 + seconds)
     else:
         return float(chrono) 

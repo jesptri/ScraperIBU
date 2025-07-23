@@ -29,8 +29,8 @@ class BiathlonScraper:
         self._click_reload_live_data()
         
         split_time_list = self._get_list_of_split_time()
-        nombre_etapes = len(split_time_list) + 4
-        yield int(100*4/nombre_etapes)
+        steps = len(split_time_list) + 4
+        yield int(100*4/steps)
         
         places = get_places(RT, self.race_season, self.race_competition)
         code_place = places[self.race_location]
@@ -42,7 +42,7 @@ class BiathlonScraper:
             print(f"Scraping starts for {split_time_list[i]}")
             self._process_split_time(split_time_list[i], split_time_list, i, bib_name_nat)
             print(f"End scrap {split_time_list[i]}")
-            yield int(100*(4+i)/nombre_etapes)
+            yield int(100*(4+i)/steps)
             
         self._final_modifications()
 
@@ -83,25 +83,25 @@ class BiathlonScraper:
             if number_of_clicks > 0:
                 left_arrow.click()
 
-    def _click_race_type(self, lieu):
+    def _click_race_type(self, location):
         if self.race_competition != "JUNIOR":
-            parent_div = WebDriverWait(lieu, 10).until(EC.visibility_of_element_located((By.XPATH, "./ancestor::div[3]")))   
+            parent_div = WebDriverWait(location, 10).until(EC.visibility_of_element_located((By.XPATH, "./ancestor::div[3]")))   
             
             try:
-                listes_courses_k = parent_div.find_element(By.XPATH, "./descendant::div[@class='au-target panel-collapse collapse in']")
+                races_k = parent_div.find_element(By.XPATH, "./descendant::div[@class='au-target panel-collapse collapse in']")
             except:
-                listes_courses_k = parent_div.find_element(By.XPATH, "./descendant::div[@class='au-target panel-collapse collapse']")
+                races_k = parent_div.find_element(By.XPATH, "./descendant::div[@class='au-target panel-collapse collapse']")
 
-            listes_courses_1 = listes_courses_k.find_element(By.XPATH, "./descendant::div[@class='list-group']")
-            listes_courses_2 = listes_courses_1.find_elements(By.XPATH, ".//a")
+            races_1 = races_k.find_element(By.XPATH, "./descendant::div[@class='list-group']")
+            races_2 = races_1.find_elements(By.XPATH, ".//a")
 
-            for course in listes_courses_2:                
-                course_0 = course.find_element(By.XPATH, ".//table[@class='stdTable']")
-                course_1 = course_0.find_element(By.XPATH, "./descendant::tr[@class='stRow']")
-                course_2 = course_1.find_element(By.XPATH, "./td[2]")
+            for race in races_2:                
+                race_0 = race.find_element(By.XPATH, ".//table[@class='stdTable']")
+                race_1 = race_0.find_element(By.XPATH, "./descendant::tr[@class='stRow']")
+                race_2 = race_1.find_element(By.XPATH, "./td[2]")
 
-                if self.race_type == course_2.text:
-                    course_2.click()
+                if self.race_type == race_2.text:
+                    race_2.click()
                     break
 
     def _click_race_competition(self):
@@ -115,15 +115,15 @@ class BiathlonScraper:
         sleep(2)
 
     def _click_race_location(self):
-        lieu = WebDriverWait(self.driver, 3).until(
+        location = WebDriverWait(self.driver, 3).until(
             EC.element_to_be_clickable((By.XPATH, f"//span[contains(text(), '{self.race_location}')]")))
-        lieu.click()
+        location.click()
         
         try:            
-            self._click_race_type(lieu)
+            self._click_race_type(location)
         except:
-            lieu.click()
-            self._click_race_type(lieu)
+            location.click()
+            self._click_race_type(location)
         
         sleep(3)
 
@@ -135,17 +135,16 @@ class BiathlonScraper:
         split_time_and_intermediates_container = [element.text for element in STstart if "INTERMEDIATES" in element.text]
         
         try:
-            split_time_list = split_time_and_intermediates_container[0].split("\n")[1:] + ["Pour pas que ça bug"]
+            split_time_list = split_time_and_intermediates_container[0].split("\n")[1:] + ["To not bug"]
         except:
-            split_time_list = split_time_and_intermediates_container.split("\n")[1:] + ["Pour pas que ça bug"]
-            print("ça passe ici !")
+            split_time_list = split_time_and_intermediates_container.split("\n")[1:] + ["To not bug"]
             
         return split_time_list
 
     def _get_biathletes_lines(self):
-        resulttable = self.driver.find_element(By.XPATH, "//div[@class = 'rtBody scrollable-resultTable au-target']")    
-        table_intermediaire = resulttable.find_element(By.XPATH, "./div[@class = 'au-target']")    
-        return table_intermediaire.find_elements(By.XPATH, './div')
+        result_table = self.driver.find_element(By.XPATH, "//div[@class = 'rtBody scrollable-resultTable au-target']")    
+        int_table = result_table.find_element(By.XPATH, "./div[@class = 'au-target']")    
+        return int_table.find_elements(By.XPATH, './div')
 
     def _get_data(self):
         all_data = []
