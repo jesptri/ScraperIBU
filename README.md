@@ -21,7 +21,7 @@ This is the **first working version** of the scraper:
 - ⚠️ Not optimized for speed or robustness  
 - 🧪 Built rapidly to support coaches during real competitions
 
-> 💡 **Want to learn more about the latest improved version?**  
-> Feel free to reach out — I'm happy to share how the project has evolved!
+> **Want to learn more about the latest improved version ?**  
+> Feel free to reach out — I'm happy to share how the project has evolved !
 
 ---
