@@ -15,7 +15,7 @@ At the time, **no official API was available** to access this data in a structur
 
 ## 🛠️ About this Version
 
-This is the **first working version** of the scraper:
+This was the **first working version** of the scraper:
 
 - ✅ Still functional  
 - ⚠️ Not optimized for speed or robustness  
