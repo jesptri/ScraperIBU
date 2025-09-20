@@ -13,7 +13,7 @@ At the time, **no official API was available** to access this data in a structur
 
 ---
 
-## 🛠️ About this Version
+## About this Version
 
 This was the **first working version** of the scraper:
 
