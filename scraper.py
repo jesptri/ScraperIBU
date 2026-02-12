@@ -326,6 +326,7 @@ class BiathlonScraper:
         self.df_final.reset_index(inplace=True, drop=True)
 
 # Usage example:
-scraper = BiathlonScraper("WORLD CUP", "Lenzerheide (SUI)", "Women 10km Sprint", "2023-2024")
-for progress in scraper.time_data_to_excel():
-    print(f"Progress: {progress}%")
+if __name__ == "__main__":
+    scraper = BiathlonScraper("WORLD CUP", "Lenzerheide (SUI)", "Women 10km Sprint", "2023-2024")
+    for progress in scraper.time_data_to_excel():
+        print(f"Progress: {progress}%")
