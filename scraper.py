@@ -7,6 +7,7 @@ from selenium.webdriver.chrome.options import Options
 from time import sleep
 import pandas as pd
 import re
+import concurrent.futures
 
 from api_biathlon import *
 
@@ -38,11 +39,50 @@ class BiathlonScraper:
         
         bib_name_nat, _, _ = get_bib_name_nat_list(RT, race_id)
 
-        for i in range(0, len(split_time_list)-1):
-            print(f"Scraping starts for {split_time_list[i]}")
-            self._process_split_time(split_time_list[i], split_time_list, i, bib_name_nat)
-            print(f"End scrap {split_time_list[i]}")
-            yield int(100*(4+i)/steps)
+        # Parallelize scraping across multiple webdriver instances (max 10 workers)
+        max_workers = min(10, max(1, len(split_time_list)-1))
+        indices = list(range(0, len(split_time_list)-1))
+
+        def submit_tasks():
+            results = []
+            with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+                futures = {
+                    executor.submit(self._scrape_single_split, split_time_list[i], split_time_list, i, bib_name_nat): i
+                    for i in indices
+                }
+                for fut in concurrent.futures.as_completed(futures):
+                    i = futures[fut]
+                    try:
+                        df_split = fut.result()
+                        results.append((i, df_split))
+                        print(f"End scrap {split_time_list[i]}")
+                    except Exception as e:
+                        print(f"Error scraping {split_time_list[i]}: {e}")
+            return results
+
+        # Run tasks and merge results
+        results = submit_tasks()
+        # Sort by original index
+        results.sort(key=lambda x: x[0])
+
+        for idx, df_split in results:
+            yield int(100*(4+idx)/steps)
+            if df_split is None or df_split.empty:
+                continue
+            if self.df_final.empty:
+                # initialize base columns
+                self.df_final["Bib"] = df_split["Bib"].astype(int)
+                self.df_final["Name"] = df_split["Name"]
+                self.df_final["Country"] = df_split["Country"]
+                self.df_final.sort_values(by='Bib', inplace=True)
+                self.df_final.reset_index(inplace=True, drop=True)
+
+            # Merge split column into final df by Bib
+            try:
+                self.df_final = pd.merge(self.df_final, df_split[['Bib', split_time_list[idx]]], on='Bib', how='left')
+            except Exception:
+                # fallback: assign by index if merge fails
+                self.df_final[split_time_list[idx]] = df_split[split_time_list[idx]].values
             
         self._final_modifications()
 
@@ -311,6 +351,55 @@ class BiathlonScraper:
         new_good_data.reset_index(inplace=True, drop=True)
         
         self._build_df_final(new_good_data, split_time_list, i)
+
+    def _process_split_time_return_df(self, split_time, split_time_list, i, bib_name_nat):
+        """Process a split time and return a DataFrame with columns ['Bib','Name','Country', split_time]."""
+        split_time_for_driver = self._get_split_time_for_driver(split_time)
+        split_time_for_driver.click()
+        duplicated_data = self._get_data()
+        split_time_for_driver.click()
+
+        deduplicated_data = self._delete_duplicate_items(duplicated_data)
+        final_data = self._manage_composed_family_name(deduplicated_data)
+
+        new_good_data = self._delete_badly_formatted_data(final_data, split_time_list, i)
+        self._fix_frequent_bug_with_names(new_good_data, bib_name_nat)
+
+        new_good_data = new_good_data.dropna()
+        new_good_data = new_good_data.iloc[:-1]
+
+        self._convert_bib_to_int(new_good_data)
+        self._convert_time_data_to_good_format(new_good_data, split_time_list, i)
+
+        new_good_data.sort_values(by='Bib', inplace=True)
+        new_good_data.reset_index(inplace=True, drop=True)
+
+        # Ensure columns and types
+        new_good_data['Bib'] = new_good_data['Bib'].astype(int)
+        return new_good_data[[ 'Bib', 'Name', 'Country', split_time_list[i]]]
+
+    def _scrape_single_split(self, split_time, split_time_list, i, bib_name_nat):
+        """Run a full browser instance to scrape a single split and return the processed DataFrame."""
+        # Create a fresh scraper instance so threads don't share state
+        scraper = BiathlonScraper(self.race_competition, self.race_location, self.race_type, self.race_season)
+        try:
+            scraper.driver = scraper._init_driver()
+            scraper._click_button_and_cookies()
+            scraper._select_year()
+            scraper._click_race_competition()
+            scraper._click_race_location()
+            scraper._click_relive()
+            scraper._click_reload_live_data()
+
+            df = scraper._process_split_time_return_df(split_time, split_time_list, i, bib_name_nat)
+            return df
+        except Exception:
+            return None
+        finally:
+            try:
+                scraper.driver.quit()
+            except Exception:
+                pass
 
     def _fix_frequent_bug_with_names(self, new_good_data, bib_name_nat):
         for index, row in new_good_data.iterrows():
